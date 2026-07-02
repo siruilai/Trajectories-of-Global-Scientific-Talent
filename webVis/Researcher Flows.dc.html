@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3/dist/topojson-client.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  input[type=range].rng { -webkit-appearance:none; appearance:none; height:3px; border-radius:3px; background:#222B3D; outline:none; }
+  input[type=range].rng::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width:14px; height:14px; border-radius:50%; background:#E8ECF4; cursor:pointer; box-shadow:0 0 0 3px rgba(45,227,200,.18); }
+  input[type=range].rng::-moz-range-thumb { width:14px; height:14px; border:none; border-radius:50%; background:#E8ECF4; cursor:pointer; }
+  @media (max-height:700px), (max-width:900px) {
+    .appHeader { padding:18px 22px 0 !important; }
+    .appHeader h1 { font-size:25px !important; }
+    .subtitle { font-size:12px !important; max-width:370px !important; }
+    .legendBox { display:none !important; }
+    .statsPanel { top:118px !important; left:22px !important; width:232px !important; padding:14px 16px !important; }
+    .dateBig { font-size:29px !important; }
+    .controlsFooter { padding:0 22px 16px !important; gap:10px !important; }
+  }
+  @media (max-height:560px), (max-width:700px) {
+    .statsPanel { display:none !important; }
+  }
+</style>
+</helmet>
+<div style="position:fixed; inset:0; background:radial-gradient(120% 90% at 50% 0%, #0B1322 0%, #06090F 60%, #04060B 100%); font-family:'Space Grotesk',sans-serif; color:#E8ECF4; overflow:hidden;">
+
+  <div ref="{{ mapWrapRef }}" style="position:absolute; inset:0;"></div>
+
+  <div ref="{{ tipRef }}" style="position:absolute; pointer-events:none; z-index:40; opacity:0; transform:translate(-50%,-130%); transition:opacity .12s; background:rgba(10,14,24,.92); border:1px solid rgba(120,140,170,.25); border-radius:8px; padding:8px 11px; font-size:12px; line-height:1.45; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,.5);"></div>
+
+  <header class="appHeader" style="position:absolute; top:0; left:0; right:0; padding:26px 34px 0; display:flex; justify-content:space-between; align-items:flex-start; z-index:20; pointer-events:none;">
+    <div>
+      <div style="font-size:11px; letter-spacing:.32em; text-transform:uppercase; color:#5BE0CF; font-weight:600; margin-bottom:9px;">Global Science · Career Trajectories</div>
+      <h1 style="font-family:'Newsreader',serif; font-weight:500; font-size:30px; line-height:1.05; margin:0; letter-spacing:-0.01em;">The Migration of Researchers</h1>
+      <div class="subtitle" style="font-size:13px; color:#8A93A6; margin-top:7px; max-width:470px; line-height:1.5;">Two-year rolling researcher movements from raw trajectories, {{ dateRangeLabel }}. Routes fade as the playhead moves through time.</div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px; align-items:flex-end; pointer-events:auto;">
+      <div class="legendBox" style="display:flex; align-items:center; gap:11px; background:rgba(13,18,30,.55); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:10px; padding:9px 14px;">
+        <span style="font-size:11px; color:#8A93A6; letter-spacing:.04em;">origin</span>
+        <span style="width:78px; height:7px; border-radius:4px; background:linear-gradient(90deg,{{ originColor }},{{ destColor }}); display:block;"></span>
+        <span style="font-size:11px; color:#8A93A6; letter-spacing:.04em;">destination</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="statsPanel" style="position:absolute; top:148px; left:34px; z-index:20; width:248px; background:rgba(11,16,27,.6); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(10px); border-radius:14px; padding:18px 19px;">
+    <div class="dateBig" style="font-family:'Newsreader',serif; font-size:34px; font-weight:500; line-height:1; letter-spacing:-0.01em;">{{ dateLabel }}</div>
+    <div style="height:1px; background:rgba(120,140,170,.16); margin:15px 0;"></div>
+    <div style="display:flex; flex-direction:column; gap:13px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span style="font-size:12px; color:#8A93A6;">Routes shown</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; color:#E8ECF4;">{{ statFlows }}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span style="font-size:12px; color:#8A93A6;">Movements</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; color:#5BE0CF;">{{ statResearchers }}</span>
+      </div>
+      <div>
+        <div style="font-size:12px; color:#8A93A6; margin-bottom:5px;">Top route</div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#E8ECF4; line-height:1.3;">{{ statTop }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; color:#F0476B;">{{ statTopVal }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:60; background:#06090F;">
+      <div style="width:34px; height:34px; border:2px solid rgba(120,140,170,.2); border-top-color:#5BE0CF; border-radius:50%; animation:spin .9s linear infinite;"></div>
+      <div style="margin-top:16px; font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:#8A93A6;">Mapping trajectories</div>
+    </div>
+  </sc-if>
+
+  <footer class="controlsFooter" style="position:absolute; bottom:0; left:0; right:0; z-index:20; padding:0 34px 26px; display:flex; flex-direction:column; gap:16px;">
+    <div style="display:flex; align-items:center; gap:18px;">
+      <button onClick="{{ togglePlay }}" style="flex:none; width:46px; height:46px; border-radius:50%; border:1px solid rgba(120,140,170,.22); background:rgba(13,18,30,.7); backdrop-filter:blur(8px); color:#E8ECF4; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+        <span style="font-size:15px;">{{ playIcon }}</span>
+      </button>
+      <div style="flex:1; position:relative; height:54px; min-width:0;">
+        <div style="position:absolute; left:0; right:0; top:22px; height:2px; background:rgba(120,140,170,.18); border-radius:2px;"></div>
+        <div style="position:absolute; left:0; top:22px; height:2px; background:linear-gradient(90deg,{{ originColor }},{{ destColor }}); border-radius:2px; width:{{ progressPct }};"></div>
+        <span style="position:absolute; left:{{ progressPct }}; top:22px; transform:translate(-50%,-50%); width:14px; height:14px; border-radius:50%; background:#E8ECF4; box-shadow:0 0 0 4px rgba(45,227,200,.2); z-index:4;"></span>
+        <input type="range" min="0" max="{{ maxWindowIdx }}" step="0.001" value="{{ playheadValue }}" onInput="{{ onWindowInput }}" style="position:absolute; left:-7px; top:10px; width:calc(100% + 14px); height:26px; opacity:0; cursor:pointer; z-index:5;">
+        <sc-for list="{{ ticks }}" as="t" hint-placeholder-count="12">
+          <button onClick="{{ t.onClick }}" style="position:absolute; left:{{ t.pct }}; top:0; height:54px; width:58px; transform:{{ t.transform }}; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:7px; background:none; border:none; cursor:pointer; padding:0 0 1px; z-index:6;">
+            <span style="width:{{ t.dot }}; height:{{ t.dot }}; border-radius:50%; background:{{ t.color }}; box-shadow:{{ t.glow }};"></span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:{{ t.txt }}; white-space:nowrap;">{{ t.label }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:8px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:8px 10px; flex:0 0 auto;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap; padding:0 4px;">Level</span>
+        <div style="display:flex; gap:3px; padding:3px; border-radius:8px; background:rgba(4,6,11,.56);">
+          <button onClick="{{ setCityLevel }}" style="border:0; border-radius:6px; background:{{ citySegBg }}; color:{{ citySegFg }}; padding:7px 12px; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; cursor:pointer;">City</button>
+          <button onClick="{{ setCountryLevel }}" style="border:0; border-radius:6px; background:{{ countrySegBg }}; color:{{ countrySegFg }}; padding:7px 12px; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; cursor:pointer;">country/region</button>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:10px 16px; flex:1 1 260px; min-width:240px;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap;">Top routes</span>
+        <input class="rng" type="range" min="20" max="400" step="10" value="{{ topN }}" onInput="{{ onTopN }}" style="flex:1;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#E8ECF4; width:34px; text-align:right;">{{ topN }}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:10px 16px; flex:1 1 260px; min-width:240px;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap;">Speed</span>
+        <input class="rng" type="range" min="0.25" max="10" step="0.25" value="{{ playbackSpeed }}" onInput="{{ onSpeedInput }}" style="flex:1;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#E8ECF4; width:42px; text-align:right;">{{ speedLabel }}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:10px 16px; flex:1 1 260px; min-width:240px;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap;">Transition</span>
+        <input class="rng" type="range" min="0.2" max="8" step="0.1" value="{{ transitionSec }}" onInput="{{ onTransitionInput }}" style="flex:1;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#E8ECF4; width:46px; text-align:right;">{{ transitionLabel }}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:10px 16px; flex:0 0 auto;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap;">Particles</span>
+        <button onClick="{{ toggleParticles }}" style="border:0; border-radius:6px; background:{{ particleToggleBg }}; color:{{ particleToggleFg }}; padding:7px 12px; min-width:44px; font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:600; cursor:pointer;">{{ particleLabel }}</button>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:10px 16px; flex:1 1 260px; min-width:240px;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap;">Arc bend</span>
+        <input class="rng" type="range" min="0" max="0.7" step="0.02" value="{{ arcBend }}" onInput="{{ onArcBendInput }}" style="flex:1;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#E8ECF4; width:42px; text-align:right;">{{ arcBendLabel }}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:13px; background:rgba(13,18,30,.7); border:1px solid rgba(120,140,170,.16); backdrop-filter:blur(8px); border-radius:11px; padding:10px 16px; flex:1 1 260px; min-width:240px;">
+        <span style="font-size:12px; color:#8A93A6; white-space:nowrap;">Opacity</span>
+        <input class="rng" type="range" min="0.1" max="2" step="0.05" value="{{ arcOpacity }}" onInput="{{ onArcOpacityInput }}" style="flex:1;">
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#E8ECF4; width:42px; text-align:right;">{{ arcOpacityLabel }}</span>
+      </div>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;mapTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Slate&quot;,&quot;options&quot;:[&quot;Midnight&quot;,&quot;Abyss&quot;,&quot;Slate&quot;,&quot;Obsidian&quot;,&quot;Evergreen&quot;,&quot;Aubergine&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;originColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#398af3&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;destColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#e16623&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { level:'city', windowIdx:0, playPos:0, playing:false, topN:160, playbackSpeed:1, transitionSec:2.0, showParticles:true, arcBend:0.28, arcOpacity:1, loaded:false };
+
+  constructor(props){
+    super(props);
+    this.mapWrap = React.createRef();
+    this.tip = React.createRef();
+    this._routeCache = {};
+    this._windowCache = {};
+    this._windowCacheKeys = [];
+    this.playPos = 0;
+  }
+
+  get ORIGIN(){ return this.props.originColor ?? '#398af3'; }
+  get DEST(){ return this.props.destColor ?? '#e16623'; }
+  get STEP_MS(){ return Math.max(0.2, this.state.transitionSec) * 1000 / Math.max(0.25, this.state.playbackSpeed || 1); }
+  get DAY_MS(){ return 86400000; }
+  get WINDOW_DAYS(){ return 365.25 * 2; }
+  get themes(){ return {
+    Midnight:  { ocean:'#080D17', land:'#141C2D', stroke:'rgba(120,150,190,.22)', grat:'rgba(120,140,170,.06)' },
+    Abyss:     { ocean:'#04101F', land:'#0E2A3D', stroke:'rgba(90,160,200,.30)',  grat:'rgba(110,170,210,.06)' },
+    Slate:     { ocean:'#0E1116', land:'#2A2F38', stroke:'rgba(160,170,185,.25)', grat:'rgba(150,160,175,.05)' },
+    Obsidian:  { ocean:'#08080A', land:'#18191D', stroke:'rgba(150,150,160,.18)', grat:'rgba(140,140,150,.04)' },
+    Evergreen: { ocean:'#05140E', land:'#10261C', stroke:'rgba(90,200,150,.22)',  grat:'rgba(90,180,140,.05)' },
+    Aubergine: { ocean:'#0B0814', land:'#221830', stroke:'rgba(170,130,205,.24)', grat:'rgba(150,120,180,.05)' }
+  }; }
+  get THEME(){ return this.themes[this.props.mapTheme] || this.themes.Slate; }
+
+  async componentDidMount(){
+    try {
+      const [cityData, countryData, topo] = await Promise.all([
+        fetch('cityflows.json').then(r=>r.json()),
+        fetch('flows.json').then(r=>r.json()),
+        fetch('https://unpkg.com/world-atlas@2/countries-110m.json').then(r=>r.json())
+      ]);
+      this.datasets = {
+        city: this.normalizeData(cityData, 'city'),
+        country: this.normalizeData(countryData, 'country')
+      };
+      this.useDataset(this.state.level);
+      this.worldFeatures = topojson.feature(topo, topo.objects.countries).features;
+      await this.initMap();
+      this.startClock();
+      const latestIdx = this.defaultWindowIdx();
+      this.playPos = latestIdx;
+      this.setState({ loaded:true, windowIdx:latestIdx, playPos:latestIdx }, ()=>this.refresh());
+    } catch(e){ console.error('load failed', e); }
+  }
+
+  componentDidUpdate(){
+    const p = this._prev || {};
+    const s = this.state;
+    if(p.topN!==s.topN){ this.refresh(); }
+    if(p.level!==s.level){
+      if(this._activeLevel !== s.level) this.useDataset(s.level);
+      this._lastFrameTs = null;
+      this.refresh();
+    }
+    if(p.playing!==s.playing || p.transitionSec!==s.transitionSec || p.playbackSpeed!==s.playbackSpeed){ this._lastFrameTs = null; }
+    if(this._prevTheme !== this.props.mapTheme){ this._prevTheme = this.props.mapTheme; this.sizeMap(); }
+    this._prev = { level:s.level, windowIdx:s.windowIdx, topN:s.topN, playing:s.playing, transitionSec:s.transitionSec, playbackSpeed:s.playbackSpeed };
+  }
+
+  componentWillUnmount(){
+    cancelAnimationFrame(this._raf);
+    if(this._onMove) window.removeEventListener('mousemove', this._onMove);
+    if(this._onUp) window.removeEventListener('mouseup', this._onUp);
+  }
+
+  normalizeData(data, level){
+    const dates = data.dates || data.windows || [];
+    let nodes = [], flows = [];
+    if(data.format === 'indexed-city-flows-v1'){
+      nodes = data.cities.map((c,i)=>({ id:i, name:c[0], cc:c[1], lat:+c[2], lng:+c[3] }));
+      flows = data.flows || [];
+    } else if(data.format === 'indexed-country-flows-v1'){
+      nodes = data.countries.map((c,i)=>({ id:i, code:c[0], name:c[1], lat:+c[2], lng:+c[3] }));
+      flows = data.flows || [];
+    } else {
+      const ids = Object.keys(data.cities || {}).sort();
+      const index = new Map(ids.map((id,i)=>[id,i]));
+      nodes = ids.map((id,i)=>({ id:i, name:data.cities[id].name, cc:data.cities[id].cc, lat:+data.cities[id].lat, lng:+data.cities[id].lng }));
+      flows = dates.map(d=>(data.flows[d]||[]).map(([from,to,w])=>[index.get(from), index.get(to), w]).filter(r=>Number.isFinite(r[0])&&Number.isFinite(r[1])));
+    }
+    return { level, dates, nodes, flows, dateMs: dates.map(d=>Date.parse(d+'T00:00:00Z')), meta: data.meta || {} };
+  }
+
+  useDataset(level){
+    const ds = this.datasets?.[level];
+    if(!ds) return;
+    this._activeLevel = level;
+    this.dates = ds.dates;
+    this.cities = ds.nodes;
+    this.flows = ds.flows;
+    this.dateMs = ds.dateMs;
+    this.meta = ds.meta;
+    this.refresh();
+  }
+
+  switchLevel(level){
+    if(level === this.state.level) return;
+    if(!this.datasets?.[level]){ this.setState({ level }); return; }
+    const currentMs = this.timeAtPos(this.playPos ?? this.state.playPos ?? this.state.windowIdx);
+    this.useDataset(level);
+    const nextPos = this.positionForTime(currentMs);
+    this.playPos = nextPos;
+    this._lastFrameTs = null;
+    if(this.tip.current) this.tip.current.style.opacity = 0;
+    this.setState({ level, windowIdx:Math.floor(nextPos), playPos:nextPos });
+  }
+
+  defaultWindowIdx(){
+    const today = new Date().toISOString().slice(0,10);
+    for(let i=this.dates.length-1; i>=0; i--){
+      if(this.dates[i] <= today && (this.flows[i]||[]).length >= this.state.topN) return i;
+    }
+    for(let i=this.dates.length-1; i>=0; i--){
+      if((this.flows[i]||[]).length >= this.state.topN) return i;
+    }
+    return Math.max(0, this.dates.length-1);
+  }
+
+  clampView(){
+    const m=this.map, v=m.view;
+    const minTx=m.w-m.w*v.k, minTy=m.h-m.h*v.k;
+    v.tx=Math.min(0, Math.max(minTx, v.tx));
+    v.ty=Math.min(0, Math.max(minTy, v.ty));
+  }
+
+  routeRows(idx){
+    if(idx<0 || idx>=this.flows.length) return [];
+    const k = String(idx);
+    if(this._routeCache[k]) return this._routeCache[k];
+    this._routeCache[k]=this.flows[idx]||[];
+    return this._routeCache[k];
+  }
+
+  arcs(){
+    const pos = Math.max(0, Math.min((this.dates?.length||1)-1, this.playPos ?? this.state.playPos ?? this.state.windowIdx));
+    const currentMs = this.timeAtPos(pos);
+    const currentDay = Math.floor(currentMs / this.DAY_MS);
+    const cacheKey = currentDay+'|'+this.state.topN;
+    if(this._windowCache[cacheKey]) return this._windowCache[cacheKey];
+
+    const windowMs = this.WINDOW_DAYS * this.DAY_MS;
+    const fadeInMs = 30 * this.DAY_MS;
+    const startIdx = this.lowerBound(this.dateMs, currentMs - windowMs);
+    const endIdx = this.upperBound(this.dateMs, currentMs) - 1;
+    const agg = new Map();
+
+    for(let idx=startIdx; idx<=endIdx; idx++){
+      const ageMs = currentMs - this.dateMs[idx];
+      if(ageMs < 0 || ageMs > windowMs) continue;
+      const fadeIn = Math.min(1, 0.2 + (ageMs / fadeInMs) * 0.8);
+      const alpha = Math.max(0, 1 - ageMs / windowMs) * fadeIn;
+      if(alpha <= 0) continue;
+      for(const [fromIdx,toIdx,w] of this.routeRows(idx)){
+        const key = fromIdx+'|'+toIdx;
+        let rec = agg.get(key);
+        if(!rec){
+          rec = { from:fromIdx, to:toIdx, w:0, visibleW:0, firstIdx:idx };
+          agg.set(key, rec);
+        }
+        rec.w += w;
+        rec.visibleW += w * alpha;
+      }
+    }
+
+    const ranked = [...agg.values()].sort((a,b)=>b.visibleW-a.visibleW).slice(0, this.state.topN);
+    const maxVisible = Math.max(1, ...ranked.map(r=>r.visibleW));
+    const out = [];
+    for(const r of ranked){
+      const from=this.cities[r.from], to=this.cities[r.to];
+      if(!from||!to) continue;
+      const alpha = Math.min(1, Math.max(0.08, r.visibleW / Math.max(1, r.w)));
+      const phase = this.hash01(r.from, r.to, Math.round(r.w));
+      out.push({
+        from:r.from, to:r.to, w:r.w, visibleW:r.visibleW,
+        startLng:from.lng, startLat:from.lat, endLng:to.lng, endLat:to.lat,
+        fromName:from.name, toName:to.name,
+        norm:Math.sqrt(r.visibleW/maxVisible),
+        visibleNorm:Math.sqrt(r.visibleW/maxVisible),
+        alpha,
+        phase
+      });
+    }
+    this._windowCache[cacheKey]=out;
+    this._windowCacheKeys.push(cacheKey);
+    if(this._windowCacheKeys.length>90){
+      const oldKey=this._windowCacheKeys.shift();
+      delete this._windowCache[oldKey];
+    }
+    return out;
+  }
+
+  nodes(arcs){
+    const m = new Map();
+    for(const a of arcs){
+      const w = a.visibleW ?? a.w;
+      if(!m.has(a.from)) m.set(a.from,{id:a.from,lng:a.startLng,lat:a.startLat,out:0,in:0,name:a.fromName});
+      if(!m.has(a.to)) m.set(a.to,{id:a.to,lng:a.endLng,lat:a.endLat,out:0,in:0,name:a.toName});
+      m.get(a.from).out += w;
+      m.get(a.to).in += w;
+    }
+    const vals = [...m.values()];
+    const max = Math.max(1, ...vals.map(v=>v.in+v.out));
+    vals.forEach(v=>{
+      v.total = v.in+v.out;
+      v.inPct = v.total ? v.in/v.total : 0;
+      v.outPct = v.total ? v.out/v.total : 0;
+      v.balance = v.total ? (v.in-v.out)/v.total : 0;
+      v.norm = Math.sqrt(v.total/max);
+      v.color = this.nodeColor(v);
+    });
+    return vals;
+  }
+
+  nodeColor(n){
+    const neutral=[205,228,255], target=n.balance>=0 ? this.hex(this.DEST) : this.hex(this.ORIGIN);
+    const gap=Math.abs(n.balance), t=0.18+gap*0.82;
+    const rgb=this.lerp(neutral,target,t);
+    return { rgb, fill:`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${(0.46+gap*0.44).toFixed(2)})`, halo:`rgba(${rgb[0]},${rgb[1]},${rgb[2]},${(0.08+gap*0.14).toFixed(2)})` };
+  }
+
+  async initMap(){
+    const el = this.mapWrap.current;
+    const cv = document.createElement('canvas');
+    cv.style.width='100%'; cv.style.height='100%'; cv.style.display='block';
+    el.appendChild(cv);
+    this.map = { el, cv, ctx:cv.getContext('2d'), view:{k:1,tx:0,ty:0} };
+    cv.style.cursor='grab';
+    cv.addEventListener('mousemove', e=>this.mapHover(e));
+    cv.addEventListener('mouseleave', ()=>{ if(this.tip.current) this.tip.current.style.opacity=0; });
+    cv.addEventListener('wheel', e=>{
+      e.preventDefault();
+      const m=this.map, v=m.view, r=cv.getBoundingClientRect();
+      const mx=e.clientX-r.left, my=e.clientY-r.top;
+      const f=Math.exp(-e.deltaY*0.0016);
+      const nk=Math.min(9, Math.max(1, v.k*f));
+      const wx=(mx-v.tx)/v.k, wy=(my-v.ty)/v.k;
+      v.k=nk; v.tx=mx-wx*nk; v.ty=my-wy*nk;
+      this.clampView();
+    }, {passive:false});
+    let lx,ly;
+    cv.addEventListener('mousedown', e=>{ this.map._drag=true; lx=e.clientX; ly=e.clientY; cv.style.cursor='grabbing'; });
+    this._onMove = e=>{ if(!this.map._drag) return; const v=this.map.view; v.tx+=e.clientX-lx; v.ty+=e.clientY-ly; lx=e.clientX; ly=e.clientY; this.clampView(); };
+    this._onUp = ()=>{ this.map._drag=false; cv.style.cursor='grab'; };
+    window.addEventListener('mousemove', this._onMove);
+    window.addEventListener('mouseup', this._onUp);
+    cv.addEventListener('dblclick', ()=>{ this.map.view={k:1,tx:0,ty:0}; });
+    this.map.land = { type:'FeatureCollection', features:this.worldFeatures };
+    this.sizeMap();
+    this._roMap = new ResizeObserver(()=>this.sizeMap());
+    this._roMap.observe(el);
+  }
+
+  sizeMap(){
+    const m=this.map; if(!m||!m.el.clientWidth) return;
+    const dpr=Math.min(2,window.devicePixelRatio||1);
+    const w=m.el.clientWidth, h=m.el.clientHeight;
+    m.w=w; m.h=h; m.dpr=dpr;
+    m.cv.width=w*dpr; m.cv.height=h*dpr;
+    m.ctx.setTransform(dpr,0,0,dpr,0,0);
+    m.proj = d3.geoEqualEarth().fitExtent([[40,150],[w-40,h-150]], {type:'Sphere'});
+    const base=document.createElement('canvas'); base.width=w*dpr; base.height=h*dpr;
+    const bx=base.getContext('2d'); bx.setTransform(dpr,0,0,dpr,0,0);
+    const path=d3.geoPath(m.proj, bx);
+    const t=this.THEME;
+    bx.beginPath(); path({type:'Sphere'}); bx.fillStyle=t.ocean; bx.fill();
+    bx.strokeStyle='rgba(255,255,255,.05)'; bx.lineWidth=1; bx.stroke();
+    bx.beginPath(); path(d3.geoGraticule10()); bx.strokeStyle=t.grat; bx.lineWidth=0.6; bx.stroke();
+    bx.beginPath(); path(this.map.land); bx.fillStyle=t.land; bx.fill();
+    bx.strokeStyle=t.stroke; bx.lineWidth=0.6; bx.stroke();
+    m.base=base;
+  }
+
+  mapHover(e){
+    const m=this.map, tip=this.tip.current; if(!m||!tip) return;
+    if(m._drag){ tip.style.opacity=0; return; }
+    const r=m.cv.getBoundingClientRect(), v=m.view;
+    const mx=e.clientX-r.left, my=e.clientY-r.top;
+    let bestN=null, bdn=1e9;
+    for(const n of (m._screenNodes||[])){
+      const sx=n.wx*v.k+v.tx, sy=n.wy*v.k+v.ty;
+      const d=Math.hypot(sx-mx, sy-my);
+      if(d<bdn){ bdn=d; bestN=n; }
+    }
+    if(bestN && bdn<14){
+      const inPct=Math.round(bestN.inPct*100), outPct=Math.round(bestN.outPct*100);
+      tip.innerHTML=`<b>${bestN.name}</b><br><span style="color:${this.DEST};font-family:'IBM Plex Mono',monospace">in ${inPct}%</span> · <span style="color:${this.ORIGIN};font-family:'IBM Plex Mono',monospace">out ${outPct}%</span><br>in <span style="color:${this.DEST};font-family:'IBM Plex Mono',monospace">${Math.round(bestN.in).toLocaleString()}</span> · out <span style="color:${this.ORIGIN};font-family:'IBM Plex Mono',monospace">${Math.round(bestN.out).toLocaleString()}</span>`;
+      tip.style.left=mx+'px'; tip.style.top=my+'px'; tip.style.opacity=1; return;
+    }
+    let bestA=null, bda=1e9;
+    for(const a of (m._screenArcs||[])){
+      const sx=a.mx*v.k+v.tx, sy=a.my*v.k+v.ty;
+      const d=Math.hypot(sx-mx, sy-my);
+      if(d<bda){ bda=d; bestA=a; }
+    }
+    if(bestA && bda<22){
+      tip.innerHTML=`<b>${bestA.fromName}</b> → <b>${bestA.toName}</b><br><span style="color:#5BE0CF;font-family:'IBM Plex Mono',monospace">${Math.round(bestA.visibleW).toLocaleString()}</span> weighted movements<br><span style="color:#8A93A6;font-family:'IBM Plex Mono',monospace">${Math.round(bestA.w).toLocaleString()}</span> raw movements in window`;
+      tip.style.left=mx+'px'; tip.style.top=my+'px'; tip.style.opacity=1;
+    } else tip.style.opacity=0;
+  }
+
+  drawMap(){
+    const m=this.map; if(!m) return;
+    if((!m.base || !m.w) && m.el.clientWidth){ this.sizeMap(); }
+    if(!m.base) return;
+    const ctx=m.ctx, w=m.w, h=m.h, v=m.view, k=v.k;
+    ctx.clearRect(0,0,w,h);
+    ctx.save();
+    ctx.translate(v.tx, v.ty); ctx.scale(k, k);
+    ctx.drawImage(m.base,0,0,w,h);
+    const proj=m.proj, arcs=this.arcs(), o=this.hex(this.ORIGIN), d=this.hex(this.DEST);
+    const t=this._t||0, screenArcs=[];
+    ctx.lineCap='round';
+    for(const a of arcs){
+      const p0=proj([a.startLng,a.startLat]), p1=proj([a.endLng,a.endLat]);
+      if(!p0||!p1) continue;
+      const dx=p1[0]-p0[0], dy=p1[1]-p0[1], dist=Math.hypot(dx,dy)||1;
+      const lift=Math.min(dist*Math.max(0, this.state.arcBend), 220);
+      const cx=(p0[0]+p1[0])/2 - dy/dist*lift, cy=(p0[1]+p1[1])/2 + dx/dist*lift;
+      ctx.beginPath(); ctx.moveTo(p0[0],p0[1]); ctx.quadraticCurveTo(cx,cy,p1[0],p1[1]);
+      const lineAlpha=Math.min(0.95, (0.02+a.visibleNorm*0.13)*a.alpha*Math.max(0.1, this.state.arcOpacity));
+      const routeGradient=ctx.createLinearGradient(p0[0],p0[1],p1[0],p1[1]);
+      routeGradient.addColorStop(0, `rgba(${o[0]},${o[1]},${o[2]},${lineAlpha})`);
+      routeGradient.addColorStop(1, `rgba(${d[0]},${d[1]},${d[2]},${lineAlpha})`);
+      ctx.strokeStyle=routeGradient; ctx.lineWidth=(0.45+a.visibleNorm*1.0)/k; ctx.stroke();
+      const mid=this.quad(p0,[cx,cy],p1,0.5); screenArcs.push({mx:mid[0],my:mid[1],fromName:a.fromName,toName:a.toName,w:a.w,visibleW:a.visibleW,alpha:a.alpha});
+      if(this.state.showParticles){
+        const np=1+Math.round(a.norm*3);
+        const particlePeriod=Math.max(0.2, this.state.transitionSec) / Math.max(0.25, this.state.playbackSpeed || 1);
+        for(let j=0;j<np;j++){
+          const tt=(((this._t||0)/particlePeriod)+a.phase+j/np*0.18)%1;
+          const p=this.quad(p0,[cx,cy],p1,tt);
+          const col=this.lerp(o,d,tt);
+          const sz=((1.0+a.visibleNorm*2.2)*(0.6+tt*0.7))/k;
+          ctx.beginPath(); ctx.arc(p[0],p[1],sz*2.4,0,6.283);
+          ctx.fillStyle=`rgba(${col[0]},${col[1]},${col[2]},${(0.10*a.alpha).toFixed(3)})`; ctx.fill();
+          ctx.beginPath(); ctx.arc(p[0],p[1],sz,0,6.283);
+          ctx.fillStyle=`rgba(${col[0]},${col[1]},${col[2]},${(0.28+0.72*a.alpha).toFixed(3)})`; ctx.fill();
+        }
+      }
+    }
+    m._screenArcs=screenArcs;
+
+    const nodes=this.nodes(arcs);
+    const screenNodes=[];
+    for(const n of nodes){
+      const p=proj([n.lng,n.lat]); if(!p) continue;
+      const r=(1.8+n.norm*8.2)/k;
+      ctx.beginPath(); ctx.arc(p[0],p[1],r*2.2,0,6.283);
+      ctx.fillStyle=n.color.halo; ctx.fill();
+      ctx.beginPath(); ctx.arc(p[0],p[1],r,0,6.283);
+      ctx.fillStyle=n.color.fill; ctx.fill();
+      ctx.beginPath(); ctx.arc(p[0],p[1],r,0,6.283);
+      ctx.strokeStyle=`rgba(${n.color.rgb[0]},${n.color.rgb[1]},${n.color.rgb[2]},.82)`; ctx.lineWidth=0.9/k; ctx.stroke();
+      screenNodes.push({wx:p[0],wy:p[1],r,name:n.name,in:n.in,out:n.out,total:n.total,inPct:n.inPct,outPct:n.outPct,balance:n.balance,color:n.color});
+    }
+    m._screenNodes=screenNodes;
+    ctx.restore();
+  }
+
+  quad(a,c,b,t){ const u=1-t; return [u*u*a[0]+2*u*t*c[0]+t*t*b[0], u*u*a[1]+2*u*t*c[1]+t*t*b[1]]; }
+  hex(h){ h=h.replace('#',''); return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]; }
+  lerp(a,b,t){ return [Math.round(a[0]+(b[0]-a[0])*t),Math.round(a[1]+(b[1]-a[1])*t),Math.round(a[2]+(b[2]-a[2])*t)]; }
+  hash01(...vals){
+    let h=2166136261;
+    for(const v of vals){
+      const s=String(v);
+      for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); }
+    }
+    return ((h>>>0)%1000003)/1000003;
+  }
+
+  timeAtPos(pos){
+    const lo=Math.floor(pos), hi=Math.min((this.dateMs?.length||1)-1, lo+1), f=pos-lo;
+    const a=this.dateMs?.[lo] ?? 0, b=this.dateMs?.[hi] ?? a;
+    return a + (b-a)*f;
+  }
+  positionForTime(ms){
+    if(!this.dateMs?.length) return 0;
+    const last=this.dateMs.length-1;
+    if(ms <= this.dateMs[0]) return 0;
+    if(ms >= this.dateMs[last]) return last;
+    const hi=this.lowerBound(this.dateMs, ms);
+    if(this.dateMs[hi] === ms) return hi;
+    const lo=Math.max(0, hi-1), span=this.dateMs[hi]-this.dateMs[lo] || 1;
+    return lo + (ms-this.dateMs[lo]) / span;
+  }
+  lowerBound(arr, x){
+    let lo=0, hi=arr.length;
+    while(lo<hi){ const mid=(lo+hi)>>1; if(arr[mid] < x) lo=mid+1; else hi=mid; }
+    return lo;
+  }
+  upperBound(arr, x){
+    let lo=0, hi=arr.length;
+    while(lo<hi){ const mid=(lo+hi)>>1; if(arr[mid] <= x) lo=mid+1; else hi=mid; }
+    return lo;
+  }
+
+  refresh(){ this._routeCache={}; this._windowCache={}; this._windowCacheKeys=[]; }
+
+  startClock(){
+    const loop=(ts)=>{
+      this._t=(ts||0)/1000;
+      if(this.state.playing && this.dates?.length){
+        const dt = this._lastFrameTs == null ? 0 : ts - this._lastFrameTs;
+        this.playPos += dt / this.STEP_MS;
+        if(this.playPos >= this.dates.length-1) this.playPos = 0;
+        const idx = Math.floor(this.playPos);
+        if(!this._lastUiUpdate || ts-this._lastUiUpdate>120 || idx!==this.state.windowIdx){
+          this._lastUiUpdate = ts;
+          this.setState({ windowIdx:idx, playPos:this.playPos });
+        }
+      }
+      this._lastFrameTs = ts;
+      this.drawMap();
+      this._raf=requestAnimationFrame(loop);
+    };
+    this._raf=requestAnimationFrame(loop);
+  }
+
+  formatDate(w){ return w ? w.replaceAll('-', '.') : ''; }
+  timelineTickIndexes(dates, activeIdx){
+    const out = new Set([0, activeIdx, dates.length-1]);
+    if(dates.length <= 14){ dates.forEach((_,i)=>out.add(i)); return [...out].sort((a,b)=>a-b); }
+    const firstYear = +dates[0].slice(0,4), lastYear = +dates[dates.length-1].slice(0,4);
+    const span = lastYear - firstYear;
+    const step = span > 70 ? 10 : span > 35 ? 5 : span > 16 ? 2 : 1;
+    dates.forEach((date,i)=>{
+      const y=+date.slice(0,4), md=date.slice(5,10);
+      if(md==='01-01' && y % step === 0) out.add(i);
+    });
+    const maxIdx=Math.max(1,dates.length-1), activePct=activeIdx/maxIdx;
+    const essential = new Set([0, activeIdx, dates.length-1]);
+    const kept = [];
+    for(const i of [...out].sort((a,b)=>a-b)){
+      const p=i/maxIdx;
+      if(i!==activeIdx && Math.abs(p-activePct)<=.035) continue;
+      if(!essential.has(i) && kept.some(j=>Math.abs((j/maxIdx)-p)<.045)) continue;
+      kept.push(i);
+    }
+    return kept;
+  }
+
+  renderVals(){
+    const dates=this.dates||['1915-05-01'];
+    const playhead=Math.max(0, Math.min(dates.length-1, this.state.playPos ?? this.state.windowIdx));
+    const idx=Math.max(0, Math.min(dates.length-1, Math.floor(playhead)));
+    const maxIdx=Math.max(0,dates.length-1);
+    const arcs=this.state.loaded?this.arcs():[];
+    const total=arcs.reduce((s,a)=>s+(a.visibleW??a.w),0);
+    const top=arcs[0];
+    const isCity=this.state.level !== 'country';
+    const speed=this.state.playbackSpeed || 1;
+    const speedLabel=(Number.isInteger(speed)?speed.toFixed(0):speed.toFixed(2).replace(/0$/,'').replace(/\.0$/,''))+'x';
+    const pct=i=>(maxIdx?((i/maxIdx)*100):0)+'%';
+    const tickIndexes=this.timelineTickIndexes(dates, idx);
+    const ticks=tickIndexes.map(i=>({
+      label:i===idx?this.formatDate(dates[i]):dates[i].slice(0,4),
+      pct:pct(i),
+      transform:(i/maxIdx)<.04?'translateX(0)':((i/maxIdx)>.96?'translateX(-100%)':'translateX(-50%)'),
+      active:i===idx,
+      dot:i===idx?'13px':'8px',
+      color:i===idx?'#E8ECF4':(i<idx?'#3a4256':'#222B3D'),
+      glow:i===idx?'0 0 0 4px rgba(45,227,200,.2)':'none',
+      txt:i===idx?'#E8ECF4':'#5A6275',
+      onClick:()=>{ this.playPos=i; this.setState({windowIdx:i, playPos:i, playing:false}); }
+    }));
+    return {
+      loading:!this.state.loaded,
+      originColor:this.ORIGIN, destColor:this.DEST,
+      citySegBg:isCity?'rgba(232,236,244,.16)':'transparent',
+      citySegFg:isCity?'#E8ECF4':'#8A93A6',
+      countrySegBg:!isCity?'rgba(232,236,244,.16)':'transparent',
+      countrySegFg:!isCity?'#E8ECF4':'#8A93A6',
+      topN:this.state.topN,
+      windowIdx:idx, playheadValue:playhead, maxWindowIdx:maxIdx,
+      playbackSpeed:this.state.playbackSpeed,
+      speedLabel,
+      transitionSec:this.state.transitionSec,
+      transitionLabel:this.state.transitionSec.toFixed(1)+'s',
+      particleLabel:this.state.showParticles?'On':'Off',
+      particleToggleBg:this.state.showParticles?'rgba(91,224,207,.18)':'rgba(232,236,244,.10)',
+      particleToggleFg:this.state.showParticles?'#5BE0CF':'#8A93A6',
+      arcBend:this.state.arcBend,
+      arcBendLabel:Math.round(this.state.arcBend*100)+'%',
+      arcOpacity:this.state.arcOpacity,
+      arcOpacityLabel:Math.round(this.state.arcOpacity*100)+'%',
+      dateRangeLabel:`${this.formatDate(dates[0])}–${this.formatDate(dates[maxIdx])}`,
+      playing:this.state.playing, playIcon:this.state.playing?'❚❚':'▶',
+      dateLabel:this.formatDate(dates[idx]),
+      progressPct:pct(playhead),
+      statFlows:arcs.length.toLocaleString(),
+      statResearchers:Math.round(total).toLocaleString(),
+      statTop:top?`${top.fromName} → ${top.toName}`:'—',
+      statTopVal:top?top.w.toLocaleString():'',
+      ticks,
+      mapWrapRef:this.mapWrap, tipRef:this.tip,
+      togglePlay:()=>this.setState(s=>{
+        if(!s.playing && this.playPos >= (this.dates?.length||1)-1) this.playPos=0;
+        return {playing:!s.playing, playPos:this.playPos, windowIdx:Math.floor(this.playPos)};
+      }),
+      onWindowInput:(e)=>{ this.playPos=+e.target.value; this.setState({windowIdx:Math.floor(this.playPos), playPos:this.playPos, playing:false}); },
+      setCityLevel:()=>this.switchLevel('city'),
+      setCountryLevel:()=>this.switchLevel('country'),
+      onTopN:(e)=>this.setState({topN:+e.target.value}),
+      onSpeedInput:(e)=>this.setState({playbackSpeed:+e.target.value}),
+      onTransitionInput:(e)=>this.setState({transitionSec:+e.target.value}),
+      toggleParticles:()=>this.setState(s=>({showParticles:!s.showParticles})),
+      onArcBendInput:(e)=>this.setState({arcBend:+e.target.value}),
+      onArcOpacityInput:(e)=>this.setState({arcOpacity:+e.target.value}),
+    };
+  }
+}
+</script>
+</body>
+</html>
