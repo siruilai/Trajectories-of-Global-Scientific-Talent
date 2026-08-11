@@ -3,3 +3,10 @@
 This repository contains the code, processed data, and interactive visualization for the paper:
 
 Trajectories of Global Scientific Talent
+
+## Repository Structure
+
+data/
+scripts/
+results/
+webVis/
