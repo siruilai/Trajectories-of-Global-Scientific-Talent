@@ -1,5 +1,5 @@
 # Trajectories of Global Scientific Talent
-
+[![GitHub Pages](https://img.shields.io/badge/Interactive%20Visualization-GitHub%20Pages-bluei.github.io/Trajectories-of-Global-Scientific-Talent/webVis/)
 [![Data Source](https://img.shields.io/badge/Data-ORCID%202025-green)](https://doi.org/10.23640/07243.303755](https://img.shields.io/badge/GitHub-Repository-black?logo=github)](https://github.com/siruilai/Trajectories-of-Globalnt)
 
 ## Overview
