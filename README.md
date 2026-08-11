@@ -1,6 +1,5 @@
 # Trajectories of Global Scientific Talent
-[![GitHub Pages](https://img.shields.io/badge/Interactive%20Visualization-GitHub%20Pages-bluei.github.io/Trajectories-of-Global-Scientific-Talent/webVis/)
-https://siruilai.github.io/Trajectories-of-Global-Scientific-Talent/webVis/
+[![Interactive Visualization](https://img.shields.io/badge/Interactive-Visualization-0969DA?logo=githubpages&logoColor=white)](https://siruilai.github.io/TrajectoriesbVis/)
 
 ## Overview
 
