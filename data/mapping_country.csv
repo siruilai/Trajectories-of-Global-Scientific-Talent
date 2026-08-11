@@ -1,0 +1,249 @@
+country_code,country_name,continent
+CN,China,Asia
+IN,India,Asia
+GB,United Kingdom,Europe
+US,United States,North America
+CA,Canada,North America
+BR,Brazil,South America
+DE,Germany,Europe
+KR,"Korea, Republic of",Asia
+FR,France,Europe
+CO,Colombia,South America
+JP,Japan,Asia
+ES,Spain,Europe
+IT,Italy,Europe
+TR,Türkiye,Asia
+AU,Australia,Oceania
+CH,Switzerland,Europe
+MX,Mexico,North America
+TW,"Taiwan, Province of China",Asia
+EC,Ecuador,South America
+PT,Portugal,Europe
+NG,Nigeria,Africa
+BD,Bangladesh,Asia
+IE,Ireland,Europe
+NL,Netherlands,Europe
+HK,Hong Kong,Asia
+GR,Greece,Europe
+IR,"Iran, Islamic Republic of",Asia
+PK,Pakistan,Asia
+CL,Chile,South America
+AT,Austria,Europe
+IL,Israel,Asia
+PE,Peru,South America
+MY,Malaysia,Asia
+ID,Indonesia,Asia
+EG,Egypt,Africa
+SE,Sweden,Europe
+RU,Russian Federation,Europe
+SG,Singapore,Asia
+SA,Saudi Arabia,Asia
+AR,Argentina,South America
+NZ,New Zealand,Oceania
+ZA,South Africa,Africa
+BE,Belgium,Europe
+PL,Poland,Europe
+DK,Denmark,Europe
+PR,Puerto Rico,North America
+IQ,Iraq,Asia
+UA,Ukraine,Europe
+ZW,Zimbabwe,Africa
+VE,"Venezuela, Bolivarian Republic of",South America
+VN,Viet Nam,Asia
+LK,Sri Lanka,Asia
+TH,Thailand,Asia
+GH,Ghana,Africa
+LB,Lebanon,Asia
+PH,Philippines,Asia
+JO,Jordan,Asia
+CU,Cuba,North America
+NP,Nepal,Asia
+FI,Finland,Europe
+KE,Kenya,Africa
+TN,Tunisia,Africa
+SD,Sudan,Africa
+DZ,Algeria,Africa
+HU,Hungary,Europe
+ET,Ethiopia,Africa
+NO,Norway,Europe
+AE,United Arab Emirates,Asia
+KZ,Kazakhstan,Asia
+CZ,Czechia,Europe
+SK,Slovakia,Europe
+MA,Morocco,Africa
+RO,Romania,Europe
+CY,Cyprus,Europe
+CR,Costa Rica,North America
+MZ,Mozambique,Africa
+DO,Dominican Republic,North America
+AO,Angola,Africa
+UG,Uganda,Africa
+UY,Uruguay,South America
+AZ,Azerbaijan,Asia
+QA,Qatar,Asia
+MO,Macao,Asia
+PY,Paraguay,South America
+MT,Malta,Europe
+RS,Serbia,Europe
+OM,Oman,Asia
+LY,Libya,Africa
+UZ,Uzbekistan,Asia
+PA,Panama,North America
+TZ,"Tanzania, United Republic of",Africa
+MW,Malawi,Africa
+KW,Kuwait,Asia
+BW,Botswana,Africa
+LU,Luxembourg,Europe
+GD,Grenada,North America
+BO,"Bolivia, Plurinational State of",South America
+BY,Belarus,Europe
+HR,Croatia,Europe
+MM,Myanmar,Asia
+HN,Honduras,North America
+SN,Senegal,Africa
+BA,Bosnia and Herzegovina,Europe
+ZM,Zambia,Africa
+CM,Cameroon,Africa
+AF,Afghanistan,Asia
+LS,Lesotho,Africa
+BG,Bulgaria,Europe
+YE,Yemen,Asia
+IS,Iceland,Europe
+SY,Syrian Arab Republic,Asia
+GT,Guatemala,North America
+EE,Estonia,Europe
+CD,"Congo, The Democratic Republic of the",Africa
+MN,Mongolia,Asia
+CV,Cabo Verde,Africa
+AM,Armenia,Asia
+PS,"Palestine, State of",Asia
+SV,El Salvador,North America
+CI,Côte d'Ivoire,Africa
+NI,Nicaragua,North America
+LT,Lithuania,Europe
+AL,Albania,Europe
+JM,Jamaica,North America
+SZ,Eswatini,Africa
+SI,Slovenia,Europe
+RW,Rwanda,Africa
+MD,"Moldova, Republic of",Europe
+FJ,Fiji,Oceania
+GE,Georgia,Asia
+BH,Bahrain,Asia
+KG,Kyrgyzstan,Asia
+RE,Réunion,Africa
+TT,Trinidad and Tobago,North America
+BF,Burkina Faso,Africa
+TJ,Tajikistan,Asia
+ME,Montenegro,Europe
+PG,Papua New Guinea,Oceania
+BJ,Benin,Africa
+GM,Gambia,Africa
+BT,Bhutan,Asia
+MG,Madagascar,Africa
+HT,Haiti,North America
+KH,Cambodia,Asia
+LV,Latvia,Europe
+BN,Brunei Darussalam,Asia
+TL,Timor-Leste,Asia
+SO,Somalia,Africa
+KN,Saint Kitts and Nevis,North America
+MU,Mauritius,Africa
+NC,New Caledonia,Oceania
+VA,Holy See (Vatican City State),Europe
+BB,Barbados,North America
+ML,Mali,Africa
+AD,Andorra,Europe
+SL,Sierra Leone,Africa
+GP,Guadeloupe,North America
+VI,"Virgin Islands, U.S.",North America
+MK,North Macedonia,Europe
+GF,French Guiana,South America
+GL,Greenland,North America
+TG,Togo,Africa
+SX,Sint Maarten (Dutch part),North America
+AG,Antigua and Barbuda,North America
+PF,French Polynesia,Oceania
+GN,Guinea,Africa
+GA,Gabon,Africa
+LR,Liberia,Africa
+GU,Guam,Oceania
+GW,Guinea-Bissau,Africa
+BS,Bahamas,North America
+LI,Liechtenstein,Europe
+LA,Lao People's Democratic Republic,Asia
+ST,Sao Tome and Principe,Africa
+DM,Dominica,North America
+ER,Eritrea,Africa
+SS,South Sudan,Africa
+MV,Maldives,Asia
+NE,Niger,Africa
+SM,San Marino,Europe
+SJ,Svalbard and Jan Mayen,Europe
+GY,Guyana,South America
+MR,Mauritania,Africa
+FO,Faroe Islands,Europe
+CG,Congo,Africa
+KM,Comoros,Africa
+GQ,Equatorial Guinea,Africa
+JE,Jersey,Europe
+MC,Monaco,Europe
+BZ,Belize,North America
+BM,Bermuda,North America
+VC,Saint Vincent and the Grenadines,North America
+BI,Burundi,Africa
+KY,Cayman Islands,North America
+TD,Chad,Africa
+CW,Curaçao,North America
+UM,United States Minor Outlying Islands,North America
+MQ,Martinique,North America
+KP,"Korea, Democratic People's Republic of",Asia
+TM,Turkmenistan,Asia
+VU,Vanuatu,Oceania
+LC,Saint Lucia,North America
+SB,Solomon Islands,Oceania
+BV,Bouvet Island,Oceania
+SR,Suriname,South America
+DJ,Djibouti,Africa
+MP,Northern Mariana Islands,Oceania
+SC,Seychelles,Africa
+WS,Samoa,Oceania
+BQ,"Bonaire, Sint Eustatius and Saba",North America
+CF,Central African Republic,Africa
+IM,Isle of Man,Europe
+AW,Aruba,North America
+IO,British Indian Ocean Territory,Oceania
+AQ,Antarctica,Other
+YT,Mayotte,Africa
+FK,Falkland Islands (Malvinas),South America
+MS,Montserrat,North America
+GI,Gibraltar,Europe
+AI,Anguilla,North America
+TC,Turks and Caicos Islands,North America
+AS,American Samoa,Oceania
+AX,Åland Islands,Europe
+MF,Saint Martin (French part),North America
+GG,Guernsey,Europe
+PN,Pitcairn,Oceania
+PW,Palau,Oceania
+VG,"Virgin Islands, British",North America
+MH,Marshall Islands,Oceania
+TO,Tonga,Oceania
+CX,Christmas Island,Oceania
+NR,Nauru,Oceania
+TF,French Southern Territories,Oceania
+EH,Western Sahara,Africa
+FM,"Micronesia, Federated States of",Oceania
+GS,South Georgia and the South Sandwich Islands,Other
+KI,Kiribati,Oceania
+SH,"Saint Helena, Ascension and Tristan da Cunha",Africa
+BL,Saint Barthélemy,North America
+TV,Tuvalu,Oceania
+CC,Cocos (Keeling) Islands,Oceania
+CK,Cook Islands,Oceania
+HM,Heard Island and McDonald Islands,Oceania
+WF,Wallis and Futuna,Oceania
+NU,Niue,Oceania
+NF,Norfolk Island,Oceania
+TK,Tokelau,Oceania
+PM,Saint Pierre and Miquelon,North America
